@@ -74,7 +74,8 @@ def register():
     if request.method == 'GET':
         return render_template("register.html", form=form)
     elif request.method == 'POST':
-        user = User()
+        user = User(form.email.data, form.name.data, generate_password_hash(form.password.data, method='pbkdf2', salt_length=8))
+        db.session.add(user)
 
 
 # TODO: Retrieve a user from the database based on their email. 
