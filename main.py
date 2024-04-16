@@ -70,6 +70,7 @@ def register():
                     password=generate_password_hash(register_form.password.data, method='pbkdf2', salt_length=8))
         db.session.add(user)
         db.session.commit()
+        login_user(user)
         return redirect(url_for('get_all_posts'))
 
 
