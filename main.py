@@ -86,11 +86,17 @@ def login():
     if login_form.validate_on_submit():
         result = db.session.execute(db.select(User).where(User.email == login_form.email.data))
         user = result.scalar()
-        if user and check_password_hash(user.password, login_form.password.data):
-            login_user(user)
-            return redirect(url_for('get_all_posts'))
+        if user:
+            if check_password_hash(user.password, login_form.password.data):
+                login_user(user)
+                return redirect(url_for('get_all_posts'))
+            else:
+                flash('Wrong password')
+                return redirect(url_for('login'))
         else:
-            flash('Invalid email or password. Please try again.', 'danger')
+            flash('Wrong user')
+            return redirect(url_for('login'))
+
     else:
         return render_template("login.html", form=login_form)
 
