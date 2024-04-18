@@ -65,12 +65,17 @@ def register():
     if request.method == 'GET':
         return render_template("register.html", form=register_form)
     elif request.method == 'POST':
-        user = User(email=register_form.email.data,
-                    name=register_form.name.data,
-                    password=generate_password_hash(register_form.password.data, method='pbkdf2', salt_length=8))
-        db.session.add(user)
-        db.session.commit()
-        login_user(user)
+        user = db.session.query(User).where(User.email == register_form.email.data)
+        if user:
+            flash('Email already registered')
+            return redirect(url_for('login'))
+        else:
+            user = User(email=register_form.email.data,
+                        name=register_form.name.data,
+                        password=generate_password_hash(register_form.password.data, method='pbkdf2', salt_length=8))
+            db.session.add(user)
+            db.session.commit()
+            login_user(user)
         return redirect(url_for('get_all_posts'))
 
 
