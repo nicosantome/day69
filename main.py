@@ -23,7 +23,7 @@ login_manager.init_app(app)
 
 @login_manager.user_loader
 def load_user(user_id):
-    User.query.get(int(user_id))
+    return User.query.get(int(user_id))
 
 # CREATE DATABASE
 class Base(DeclarativeBase):
@@ -104,6 +104,7 @@ def login():
 
 @app.route('/logout')
 def logout():
+    logout_user()
     return redirect(url_for('get_all_posts'))
 
 
