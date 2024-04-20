@@ -24,7 +24,7 @@ login_manager.init_app(app)
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return db.session.query(User).get(int(user_id))
 
 # CREATE DATABASE
 class Base(DeclarativeBase):
@@ -46,13 +46,14 @@ def admin_only(f):
 
 
 # User table for all your registered users. (Parent)
-class User(Base):
+class User(Base, UserMixin):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True)
     email = Column(String(250), unique=True, nullable=False)
     name = Column(String(250), nullable=False)
     password = Column(String(250), nullable=False)
     posts = relationship('BlogPost', back_populates='author')
+
 
 
 # CONFIGURE TABLES
@@ -65,6 +66,7 @@ class BlogPost(Base):
     body = Column(Text, nullable=False)
     author_id = Column(Integer, ForeignKey('users.id'))
     author = relationship('User', back_populates='posts')
+    img_url= Column(String(250), nullable=False)
 
 
 
@@ -79,7 +81,8 @@ def register():
     if request.method == 'GET':
         return render_template("register.html", form=register_form)
     elif request.method == 'POST':
-        user = db.session.query(User).where(User.email == register_form.email.data)
+        result = db.session.query(User).where(User.email == register_form.email.data)
+        user = result.scalar()
         if user:
             flash('Email already registered')
             return redirect(url_for('login'))
@@ -147,7 +150,7 @@ def add_new_post():
             subtitle=form.subtitle.data,
             body=form.body.data,
             img_url=form.img_url.data,
-            author=current_user.name,
+            author=current_user,
             date=date.today().strftime("%B %d, %Y")
         )
         db.session.add(new_post)
