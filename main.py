@@ -10,7 +10,7 @@ from sqlalchemy import Integer, String, Text, ForeignKey, Column
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 # Import your forms from the forms.py
-from forms import CreatePostForm, RegisterForm, LoginForm
+from forms import CreatePostForm, RegisterForm, LoginForm, CommentForm
 from typing import List
 
 app = Flask(__name__)
@@ -53,6 +53,7 @@ class User(Base, UserMixin):
     name = Column(String(250), nullable=False)
     password = Column(String(250), nullable=False)
     posts = relationship('BlogPost', back_populates='author')
+    comments = relationship('Comment', back_populates='comment_author')
 
 
 
@@ -66,8 +67,18 @@ class BlogPost(Base):
     body = Column(Text, nullable=False)
     author_id = Column(Integer, ForeignKey('users.id'))
     author = relationship('User', back_populates='posts')
-    img_url= Column(String(250), nullable=False)
+    img_url = Column(String(250), nullable=False)
+    comments = relationship('Comment', back_populates='parent_post')
 
+
+class Comment(Base):
+    __tablename__ = "comments"
+    id = Column(Integer, primary_key=True)
+    text = Column(String(500), unique=True, nullable=False)
+    author_id = Column(Integer, ForeignKey("users.id"))
+    comment_author = relationship("User", back_populates="comments")
+    parent_post = relationship("BlogPost", back_populates="comments")
+    post_id = Column(Integer, ForeignKey('blog_posts.id'))
 
 
 with app.app_context():
@@ -132,11 +143,12 @@ def get_all_posts():
     return render_template("index.html", all_posts=posts, current_user=current_user)
 
 
-# TODO: Allow logged-in users to comment on posts
+# logged-in users to comment on posts
 @app.route("/post/<int:post_id>")
 def show_post(post_id):
+    comment_form = CommentForm()
     requested_post = db.get_or_404(BlogPost, post_id)
-    return render_template("post.html", post=requested_post)
+    return render_template("post.html", post=requested_post, comment_form=comment_form)
 
 
 # Use a decorator so only an admin user can create a new post
