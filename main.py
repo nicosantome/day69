@@ -6,11 +6,12 @@ from flask_gravatar import Gravatar
 from flask_login import UserMixin, login_user, LoginManager, current_user, logout_user
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import relationship, DeclarativeBase, Mapped, mapped_column
-from sqlalchemy import Integer, String, Text
+from sqlalchemy import Integer, String, Text, ForeignKey, Column
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 # Import your forms from the forms.py
 from forms import CreatePostForm, RegisterForm, LoginForm
+from typing import List
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '8BYkEfBA6O6donzWlSihBXox7C0sKR6b'
@@ -44,25 +45,27 @@ def admin_only(f):
     return decorator_function
 
 
-# CONFIGURE TABLES
-class BlogPost(db.Model):
-    __tablename__ = "blog_posts"
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    title: Mapped[str] = mapped_column(String(250), unique=True, nullable=False)
-    subtitle: Mapped[str] = mapped_column(String(250), nullable=False)
-    date: Mapped[str] = mapped_column(String(250), nullable=False)
-    body: Mapped[str] = mapped_column(Text, nullable=False)
-    author: Mapped[str] = mapped_column(String(250), nullable=False)
-    img_url: Mapped[str] = mapped_column(String(250), nullable=False)
-
-
-# User table for all your registered users.
-class User(db.Model, UserMixin):
+# User table for all your registered users. (Parent)
+class User(Base):
     __tablename__ = "users"
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    email: Mapped[str] = mapped_column(String(250), unique=True, nullable=False)
-    name: Mapped[str] = mapped_column(String(250), nullable=False)
-    password: Mapped[str] = mapped_column(String(250), nullable=False)
+    id = Column(Integer, primary_key=True)
+    email = Column(String(250), unique=True, nullable=False)
+    name = Column(String(250), nullable=False)
+    password = Column(String(250), nullable=False)
+    posts = relationship('BlogPost', back_populates='author')
+
+
+# CONFIGURE TABLES
+class BlogPost(Base):
+    __tablename__ = "blog_posts"
+    id = Column(Integer, primary_key=True)
+    title = Column(String(250), unique=True, nullable=False)
+    subtitle = Column(String(250), nullable=False)
+    date = Column(String(250), nullable=False)
+    body = Column(Text, nullable=False)
+    author_id = Column(Integer, ForeignKey('users.id'))
+    author = relationship('User', back_populates='posts')
+
 
 
 with app.app_context():
